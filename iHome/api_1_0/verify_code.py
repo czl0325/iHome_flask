@@ -4,6 +4,8 @@ from iHome.utils.response_code import RET, error_map
 from iHome import redis_store, constants
 from flask import make_response, current_app, jsonify, request
 from iHome.models import User
+from iHome.libs.sms.SMS import SMS
+import random
 
 
 # GET 127.0.0.1/api/v1.0/image_codes/<image_code_id>
@@ -23,12 +25,12 @@ def get_image_code(image_code_id):
     return resp
 
 
-# GET /api/v1.0/sms_codes/<mobile>?image_code=xxxx&image_code_id=xxxx
-@api.route("/sms_codes/<re(r'1[34578]\d{9}'):mobile>")
+# GET /api/v1.0/sms_code/<mobile>?code=xxxx&code_id=xxxx
+@api.route("/sms_code/<re(r'1[34578]\d{9}'):mobile>")
 def get_sms_code(mobile):
     """获取短信验证码"""
-    image_code = request.args.get("image_code")
-    image_code_id = request.args.get("image_code_id")
+    image_code = request.args.get("code")
+    image_code_id = request.args.get("code_id")
 
     if not all([image_code, image_code_id]):
         return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
@@ -69,3 +71,27 @@ def get_sms_code(mobile):
     else:
         if user is not None:
             return jsonify(errno=RET.DATAEXIST, errmsg=error_map[RET.DATAEXIST])
+
+    # 如果手机号不存在，则生成短信验证码
+    sms_code = "%06d" % random.randint(0, 999999)
+
+    try:
+        # 保存真实的短信验证码
+        redis_store.setex("sms_code_%s" % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
+        # 保存发送给这个手机号的记录，防止用户在60s内再次出发发送短信的操作
+        redis_store.setex("send_sms_code_%s" % mobile, constants.SEND_SMS_CODE_INTERVAL, 1)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+
+    try:
+        sms = SMS()
+        result = sms.send_template_sms(mobile, [sms_code, int(constants.SMS_CODE_REDIS_EXPIRES/60)], 1)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.THIRDERR, errmsg=error_map[RET.THIRDERR])
+
+    if result == 0:
+        return jsonify(errno=RET.OK, error_map=error_map[RET.OK])
+    else:
+        return jsonify(errno=RET.THIRDERR, error_map=error_map[RET.THIRDERR])
