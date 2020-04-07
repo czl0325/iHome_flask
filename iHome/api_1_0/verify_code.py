@@ -1,0 +1,71 @@
+from . import api
+from iHome.utils.captcha.captcha import captcha
+from iHome.utils.response_code import RET, error_map
+from iHome import redis_store, constants
+from flask import make_response, current_app, jsonify, request
+from iHome.models import User
+
+
+# GET 127.0.0.1/api/v1.0/image_codes/<image_code_id>
+@api.route("/image_codes/<image_code_id>")
+def get_image_code(image_code_id):
+    # 生成验证码图片 返回：名字，真实文本，图片数据
+    name, text, image_data = captcha.generate_captcha()
+    # 将验证码真实值与编号保存到redis中, 设置有效期
+    try:
+        redis_store.setex("image_code_%s" % image_code_id, constants.IMAGE_CODE_REDIS_EXPIRES, text)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+    # 返回图片
+    resp = make_response(image_data)
+    resp.headers["Content-Type"] = "image/jpg"
+    return resp
+
+
+# GET /api/v1.0/sms_codes/<mobile>?image_code=xxxx&image_code_id=xxxx
+@api.route("/sms_codes/<re(r'1[34578]\d{9}'):mobile>")
+def get_sms_code(mobile):
+    """获取短信验证码"""
+    image_code = request.args.get("image_code")
+    image_code_id = request.args.get("image_code_id")
+
+    if not all([image_code, image_code_id]):
+        return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
+
+    try:
+        real_code = redis_store.get("image_code_%s" % image_code_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+
+    if real_code is None:
+        return jsonify(errno=RET.NODATA, errmsg=error_map[RET.NODATA])
+
+    # 删除redis中的图片验证码，防止用户使用同一个图片验证码验证多次
+    try:
+        redis_store.delete("image_code_%s" % image_code_id)
+    except Exception as e:
+        current_app.logger.error(e)
+
+    # 与用户填写的值进行对比
+    if real_code.lower() != image_code.lower():
+        return jsonify(errno=RET.DATAERR, errmsg=error_map[RET.DATAERR])
+
+    try:
+        send_flag = redis_store.get("send_sms_code_%s" % mobile)
+    except Exception as e:
+        current_app.logger.error(e)
+    else:
+        if send_flag is not None:
+            # 表示在60秒内之前有过发送的记录
+            return jsonify(errno=RET.REQERR, errmsg=error_map[RET.REQERR])
+
+    # 判断手机号是否存在
+    try:
+        user = User.query.filter_by(mobile=mobile).first()
+    except Exception as e:
+        current_app.logger.error(e)
+    else:
+        if user is not None:
+            return jsonify(errno=RET.DATAEXIST, errmsg=error_map[RET.DATAEXIST])
