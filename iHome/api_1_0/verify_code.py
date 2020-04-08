@@ -30,7 +30,7 @@ def get_image_code(image_code_id):
 def get_sms_code(mobile):
     """获取短信验证码"""
     image_code = request.args.get("code")
-    image_code_id = request.args.get("code_id")
+    image_code_id = request.args.get("codeId")
 
     if not all([image_code, image_code_id]):
         return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
@@ -85,7 +85,7 @@ def get_sms_code(mobile):
         return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
 
     try:
-        sms = SMS()
+        sms = SMS.instance()
         result = sms.send_template_sms(mobile, [sms_code, int(constants.SMS_CODE_REDIS_EXPIRES/60)], 1)
     except Exception as e:
         current_app.logger.error(e)

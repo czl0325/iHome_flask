@@ -2,11 +2,13 @@ from datetime import datetime
 import hashlib, base64, json, urllib
 from iHome.utils.xml2json import Xml2Json
 
+
 class REST(object):
     def __init__(self, ServerIP, ServerPort, SoftVersion):
         self.ServerIP = ServerIP
         self.ServerPort = ServerPort
         self.SoftVersion = SoftVersion
+        self.BodyType = 'json'
 
     # 设置主帐号
     # @param AccountSid  必选参数    主帐号
@@ -26,14 +28,14 @@ class REST(object):
         nowdate = datetime.now()
         self.Batch = nowdate.strftime("%Y%m%d%H%M%S")
         # 生成sig
-        signature = self.AccountSid + self.AccountToken + self.Batch;
-        sig = hashlib.md5.new(signature).hexdigest().upper()
+        signature = self.AccountSid + self.AccountToken + self.Batch
+        sig = hashlib.md5(signature.encode("latin1")).hexdigest().upper()
         # 拼接URL
         url = "https://" + self.ServerIP + ":" + self.ServerPort + "/" + self.SoftVersion + "/Accounts/" + self.AccountSid + "/SMS/TemplateSMS?sig=" + sig
         # 生成auth
         src = self.AccountSid + ":" + self.Batch;
-        auth = base64.encodestring(src).strip()
-        req = urllib.Request(url)
+        auth = base64.encodebytes(src.encode(encoding='utf-8')).strip()
+        req = urllib.request.Request(url)
         self.setHttpHeader(req)
         req.add_header("Authorization", auth)
         # 创建包体
@@ -69,3 +71,12 @@ class REST(object):
             if self.Iflog:
                 self.log(url, body, data)
             return {'172001': '网络错误'}
+
+    # 设置包头
+    def setHttpHeader(self, req):
+        if self.BodyType == 'json':
+            req.add_header("Accept", "application/json")
+            req.add_header("Content-Type", "application/json;charset=utf-8")
+        else:
+            req.add_header("Accept", "application/xml")
+            req.add_header("Content-Type", "application/xml;charset=utf-8")

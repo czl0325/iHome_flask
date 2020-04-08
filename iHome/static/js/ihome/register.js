@@ -44,7 +44,8 @@ function sendSMSCode() {
         $(".phonecode-a").attr("onclick", "sendSMSCode();");
         return;
     }
-    $.get("/api/v1.0/sms_code", {mobile:mobile, code:imageCode, codeId:imageCodeId},
+    console.log("/api/v1.0/sms_code/" + mobile)
+    $.get("/api/v1.0/sms_code/" + mobile, {code:imageCode, codeId:imageCodeId},
         function(data){
             if (0 != data.errno) {
                 $("#image-code-err span").html(data.errmsg); 

@@ -3,6 +3,7 @@ from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 
 app = create_app("develop")
+app.jinja_env.auto_reload = True
 
 manager = Manager(app)
 Migrate(app, db)
