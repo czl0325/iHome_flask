@@ -44,7 +44,6 @@ function sendSMSCode() {
         $(".phonecode-a").attr("onclick", "sendSMSCode();");
         return;
     }
-    console.log("/api/v1.0/sms_code/" + mobile)
     $.get("/api/v1.0/sms_code/" + mobile, {code:imageCode, codeId:imageCodeId},
         function(data){
             if (0 != data.errno) {
@@ -93,8 +92,8 @@ $(document).ready(function() {
         e.preventDefault();
         mobile = $("#mobile").val();
         phoneCode = $("#phonecode").val();
-        passwd = $("#password").val();
-        passwd2 = $("#password2").val();
+        password = $("#password").val();
+        password2 = $("#password2").val();
         if (!mobile) {
             $("#mobile-err span").html("请填写正确的手机号！");
             $("#mobile-err").show();
@@ -105,15 +104,29 @@ $(document).ready(function() {
             $("#phone-code-err").show();
             return;
         }
-        if (!passwd) {
+        if (!password) {
             $("#password-err span").html("请填写密码!");
             $("#password-err").show();
             return;
         }
-        if (passwd != passwd2) {
+        if (password != password2) {
             $("#password2-err span").html("两次密码不一致!");
             $("#password2-err").show();
             return;
         }
+        csrf_token = getCookie("csrf_token")
+        $.post("/api/v1.0/user/register", {
+            mobile: mobile,
+            phoneCode: phoneCode,
+            password: password,
+            password2: password2,
+            csrf_token: csrf_token
+        }, function (res) {
+            if (res.errno == 0) {
+                window.location = "/index.html"
+            } else {
+                alert(res.errmsg)
+            }
+        })
     });
 })

@@ -92,6 +92,6 @@ def get_sms_code(mobile):
         return jsonify(errno=RET.THIRDERR, errmsg=error_map[RET.THIRDERR])
 
     if result == 0:
-        return jsonify(errno=RET.OK, error_map=error_map[RET.OK])
+        return jsonify(errno=RET.OK, errmsg=error_map[RET.OK])
     else:
-        return jsonify(errno=RET.THIRDERR, error_map=error_map[RET.THIRDERR])
+        return jsonify(errno=RET.THIRDERR, errmsg=error_map[RET.THIRDERR])
