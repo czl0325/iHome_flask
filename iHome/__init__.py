@@ -8,8 +8,9 @@ from flask_session import Session
 from flask_wtf import CSRFProtect
 from iHome.utils.commons import ReConverter
 import pymysql
-
 pymysql.install_as_MySQLdb()
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 # 数据库
 db = SQLAlchemy()

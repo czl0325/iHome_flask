@@ -1,6 +1,7 @@
 from datetime import datetime
 import hashlib, base64, json, urllib
 from iHome.utils.xml2json import Xml2Json
+import logging
 
 
 class REST(object):
@@ -50,13 +51,13 @@ class REST(object):
             # if this model is Json ..then do next code
             b = '['
             for a in datas:
-                b += '"%s",' % (a)
+                b += '"%s",' % a
             b += ']'
             body = '''{"to": "%s", "datas": %s, "templateId": "%s", "appId": "%s"}''' % (to, b, tempId, self.AppId)
-        req.add_data(body)
+        req.data = body.encode("utf-8")
         data = ''
         try:
-            res = urllib.urlopen(req);
+            res = urllib.request.urlopen(req)
             data = res.read()
             res.close()
 
@@ -64,12 +65,9 @@ class REST(object):
                 locations = json.loads(data)
             else:
                 locations = str(Xml2Json(data).result)
-            if self.Iflog:
-                self.log(url, body, data)
             return locations
         except Exception as e:
-            if self.Iflog:
-                self.log(url, body, data)
+            logging.error(e)
             return {'172001': '网络错误'}
 
     # 设置包头
