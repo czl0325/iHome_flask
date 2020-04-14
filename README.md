@@ -11,6 +11,7 @@ pip install flask_wtf       #为flask添加表单验证服务
 pip install flask_script    #为flask添加类似django的runserver命令
 pip install flask_migrate   #为flask添加数据库生成命令
 pip install xmltodict       #xml转化成dict
+pip install qiniu           #七牛图片储存框架
 ```
 
 - migrate数据库指令

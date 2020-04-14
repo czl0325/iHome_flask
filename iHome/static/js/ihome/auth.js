@@ -24,7 +24,7 @@ $(document).ready(function () {
             return;
         }
 
-        $.post("/api/v1.0/user/auth", {
+        $.post("/api/v1.0/user/profile", {
             "real_name": real_name,
             "id_card": id_card,
             "csrf_token": getCookie("csrf_token")

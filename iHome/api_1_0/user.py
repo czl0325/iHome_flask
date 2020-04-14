@@ -7,6 +7,8 @@ from sqlalchemy.exc import IntegrityError
 import re
 from werkzeug.security import check_password_hash
 from iHome.utils.commons import LoginRequired
+from iHome.utils.image_upload import upload_image
+from iHome import constants
 
 
 @api.route("/user/register", methods=["POST"])
@@ -112,17 +114,26 @@ def getUserById(uid):
 
 
 # 实名认证接口
-@api.route("/user/auth", methods=["POST"])
+@api.route("/user/profile", methods=["POST"])
 @LoginRequired
 def user_auth():
     real_name = request.form.get("real_name")
     id_card = request.form.get("id_card")
-    if not all([real_name, id_card]):
+    name = request.form.get("name")
+
+    if real_name is None and id_card is None and name is None:
         return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
 
     user_id = g.user_id
+    info = {}
+    if real_name is not None:
+        info["real_name"] = real_name
+    if id_card is not None:
+        info["id_card"] = id_card
+    if name is not None:
+        info["name"] = name
     try:
-        User.query.filter_by(id=user_id).update({"real_name": real_name, "id_card": id_card})
+        User.query.filter_by(id=user_id).update(info)
         db.session.commit()
     except Exception as e:
         current_app.logger.error(e)
@@ -130,6 +141,39 @@ def user_auth():
         return jsonify(errno=RET.DBERR, errmsg="保存失败，请稍后重试")
     resp = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK]))
     resp.headers["Content-Type"] = "application/json"
-    resp.set_cookie("real_name", real_name)
-    resp.set_cookie("id_card", id_card)
+    if real_name is not None:
+        resp.set_cookie("real_name", real_name)
+    if id_card is not None:
+        resp.set_cookie("id_card", id_card)
+    if name is not None:
+        resp.set_cookie("name", name)
+    return resp
+
+
+@api.route("/user/avatar", methods=["POST"])
+@LoginRequired
+def upload_avatar():
+    image_data = request.files.get("avatar")
+    user_id = g.user_id
+
+    if not image_data:
+        return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
+
+    try:
+        result = upload_image(image_data.read())
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.THIRDERR, errmsg="上传图片失败")
+
+    try:
+        User.query.filter_by(id=user_id).update({"avatar_url": result})
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="失败，请稍后重试")
+
+    resp = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK]))
+    resp.headers["Content-Type"] = "application/json"
+    resp.set_cookie("avatar_url", constants.QINIU_URL_PREFIX + result)
     return resp
