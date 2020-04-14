@@ -46,10 +46,16 @@ class User(BaseModel, db.Model):
         """
         self.password_hash = generate_password_hash(value)
 
-    # def generate_password_hash(self, origin_password):
-    #     """对密码进行加密"""
-    #     self.password_hash = generate_password_hash(origin_password)
-
+    def to_user_dict(self):
+        user_dict = {
+            "id": self.id,
+            "name": self.name,
+            "mobile": self.mobile,
+            "avatar_url": self.avatar_url,
+            "id_card": self.id_card,
+            "real_name": self.real_name
+        }
+        return user_dict
 
 
 class Area(BaseModel, db.Model):

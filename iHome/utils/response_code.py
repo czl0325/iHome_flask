@@ -27,7 +27,7 @@ error_map = {
     RET.DATAERR               : u"数据错误",
     RET.SESSIONERR            : u"用户未登录",
     RET.LOGINERR              : u"用户登录失败",
-    RET.PARAMERR              : u"参数错误",
+    RET.PARAMERR              : u"缺少必要参数或参数错误",
     RET.USERERR               : u"用户不存在或未激活",
     RET.ROLEERR               : u"用户身份错误",
     RET.PWDERR                : u"密码错误",

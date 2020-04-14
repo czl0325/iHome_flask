@@ -1,3 +1,7 @@
+function getCookie(name) {
+    var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+    return r ? r[1] : undefined;
+}
 //模态框居中的控制
 function centerModals(){
     $('.modal').each(function(i){   //遍历每一个模态框
@@ -58,7 +62,15 @@ function goToSearchPage(th) {
 }
 
 $(document).ready(function(){
-    $(".top-bar>.register-login").show();
+    var user_id = getCookie("user_id")
+    if (user_id) {
+        $(".top-bar>.user-info").show();
+        $(".top-bar>.user-info>.user-name").html(getCookie("name"))
+        $(".top-bar>.register-login").hide();
+    } else {
+        $(".top-bar>.user-info").hide();
+        $(".top-bar>.register-login").show();
+    }
     var mySwiper = new Swiper ('.swiper-container', {
         loop: true,
         autoplay: 2000,
