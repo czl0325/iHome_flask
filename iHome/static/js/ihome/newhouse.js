@@ -38,7 +38,7 @@ $(document).ready(function () {
             facilitity_str += `${$(x).val()},`
         })
         if (facilitity_str.length > 0) {
-            facilitity_str = facilitity_str.substring(0, facilitity_str.length-1)
+            facilitity_str = facilitity_str.substring(0, facilitity_str.length - 1)
         }
         data.facility = facilitity_str
         data.csrf_token = getCookie("csrf_token")
@@ -57,6 +57,30 @@ $(document).ready(function () {
             } else {
                 alert(res.errmsg)
             }
+        })
+        $("#form-house-image").submit(function (e) {
+            e.preventDefault()
+
+            $(this).ajaxSubmit({
+                url: "/api/v1.0/house/image",
+                type: "post",
+                dataType: "json",
+                async: false,
+                data: {
+                    "csrf_token": getCookie("csrf_token")
+                },
+                success: function (res) {
+                    if (res.errno == 0) {
+                        $(".house-image-cons").append(`<img src='${res.data}'>`)
+                    } else if (res.errno == "4101") {
+                        window.location = "/login.html"
+                    } else {
+                        alert(res.errmsg)
+                    }
+                }
+            })
+
+            return false
         })
     })
 })

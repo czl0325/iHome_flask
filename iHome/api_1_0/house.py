@@ -1,9 +1,11 @@
 from . import api
 from flask import request, jsonify, session, current_app, make_response, g
-from iHome.models import Area, Facility, House
+from iHome.models import Area, Facility, House, HouseImage
 from iHome.utils.response_code import RET, error_map
 from iHome.utils.commons import LoginRequired
 from iHome import db
+from iHome.utils.image_upload import upload_image
+from iHome import constants
 
 
 @api.route("/house/create", methods=["POST"])
@@ -87,3 +89,45 @@ def create_house():
         return jsonify(errno=RET.DBERR, errmsg="保存房屋信息失败")
 
     return jsonify(errno=RET.OK, errmsg="保存成功", data={"house_id": house.id})
+
+
+@api.route("/house/image", methods=["POST"])
+@LoginRequired
+def upload_house_image():
+    user_id = g.user_id
+    image_data = request.files.get("house_image")
+    house_id = request.form.get("house_id")
+
+    if not all([image_data, house_id]):
+        return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
+
+    try:
+        result = upload_image(image_data.read())
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.THIRDERR, errmsg="上传图片失败")
+
+    house_image = HouseImage(
+        house_id=house_id,
+        url=result
+    )
+
+    try:
+        db.session.add(house_image)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存图片失败")
+
+    try:
+        house = House.query.get(house_id)
+        if house.index_image_url is None:
+            house.index_image_url = constants.QINIU_URL_PREFIX+result
+            db.session.add(house)
+            db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(e)
+
+    return jsonify(errno=RET.OK, errmsg="上传成功", data=constants.QINIU_URL_PREFIX+result)
