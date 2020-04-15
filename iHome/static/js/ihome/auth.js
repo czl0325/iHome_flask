@@ -11,8 +11,12 @@ function showSuccessMsg() {
 }
 
 $(document).ready(function () {
-    $("#real-name").val(getCookie("real_name") || "");
-    $("#id-card").val(getCookie("id_card") || "");
+    $.get("/api/v1.0/user/" + getCookie("user_id"), function (res) {
+        if (res.errno == 0) {
+            $("#real-name").val(res.data.real_name);
+            $("#id-card").val(res.data.id_card);
+        }
+    })
 
     $("#form-auth").submit(function (e) {
         e.preventDefault()

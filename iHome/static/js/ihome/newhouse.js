@@ -4,6 +4,25 @@ function getCookie(name) {
 }
 
 $(document).ready(function(){
-    // $('.popup_con').fadeIn('fast');
-    // $('.popup_con').fadeOut('fast');
+    $.get("/api/v1.0/area", function (res) {
+        if (res.errno == 0) {
+            var html = template("area-template", {areas: res.data})
+            $("#area-id").html(html)
+        } else {
+            alert(res.errmsg)
+        }
+    })
+    $.get("/api/v1.0/facility", function (res) {
+        if (res.errno == 0) {
+            var html = template("facility-template", {facilities: res.data})
+            $("#facility-ul").html(html)
+        } else {
+            alert(res.errmsg)
+        }
+    })
+    $("#form-house-info").submit(function (e) {
+        e.preventDefault()
+
+
+    })
 })

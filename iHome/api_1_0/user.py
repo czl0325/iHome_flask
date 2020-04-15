@@ -94,11 +94,13 @@ def login():
 
 @api.route("/user/<int:uid>", methods=["GET"])
 def getUserById(uid):
+    """根据id获取user信息"""
     try:
         user = User.query.get(uid)
     except Exception as e:
         return jsonify(errno=RET.DBERR, errmsg="没有该用户")
 
+    user.avatar_url = constants.QINIU_URL_PREFIX + user.avatar_url
     resp = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=user.to_user_dict()))
     resp.headers["Content-Type"] = "application/json"
     resp.set_cookie("name", user.mobile)
@@ -153,6 +155,7 @@ def user_auth():
 @api.route("/user/avatar", methods=["POST"])
 @LoginRequired
 def upload_avatar():
+    """上传头像"""
     image_data = request.files.get("avatar")
     user_id = g.user_id
 

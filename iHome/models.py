@@ -67,6 +67,12 @@ class Area(BaseModel, db.Model):
     name = db.Column(db.String(32), nullable=False)  # 区域名字
     houses = db.relationship("House", backref="area")  # 区域的房屋
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
+
 
 # 房屋设施表，建立房屋与设施的多对多关系
 house_facility = db.Table(
@@ -109,6 +115,12 @@ class Facility(BaseModel, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)  # 设施编号
     name = db.Column(db.String(32), nullable=False)  # 设施名字
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
 
 
 class HouseImage(BaseModel, db.Model):
