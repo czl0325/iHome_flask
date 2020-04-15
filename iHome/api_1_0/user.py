@@ -56,7 +56,10 @@ def register():
     session["name"] = user.mobile
     session["mobile"] = user.mobile
     session["user_id"] = user.id
-    return jsonify(errno=RET.OK, errmsg=error_map[RET.OK])
+    resp = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK]))
+    resp.set_cookie("mobile", user.mobile)
+    resp.set_cookie("user_id", str(user.id))
+    return resp
 
 
 @api.route("/user/login", methods=["POST"])
@@ -80,15 +83,8 @@ def login():
     session["user_id"] = user.id
     resp = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=user.to_user_dict()))
     resp.headers["Content-Type"] = "application/json"
-    resp.set_cookie("name", user.mobile)
     resp.set_cookie("mobile", user.mobile)
     resp.set_cookie("user_id", str(user.id))
-    if user.avatar_url is not None:
-        resp.set_cookie("avatar_url", user.avatar_url)
-    if user.real_name is not None:
-        resp.set_cookie("real_name", user.real_name)
-    if user.id_card is not None:
-        resp.set_cookie("real_name", user.id_card)
     return resp
 
 
@@ -100,18 +96,11 @@ def getUserById(uid):
     except Exception as e:
         return jsonify(errno=RET.DBERR, errmsg="没有该用户")
 
-    user.avatar_url = constants.QINIU_URL_PREFIX + user.avatar_url
+    user.avatar_url = constants.QINIU_URL_PREFIX + user.avatar_url if user.avatar_url is not None else ""
     resp = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=user.to_user_dict()))
     resp.headers["Content-Type"] = "application/json"
-    resp.set_cookie("name", user.mobile)
     resp.set_cookie("mobile", user.mobile)
     resp.set_cookie("user_id", str(user.id))
-    if user.avatar_url is not None:
-        resp.set_cookie("avatar_url", user.avatar_url)
-    if user.real_name is not None:
-        resp.set_cookie("real_name", user.real_name)
-    if user.id_card is not None:
-        resp.set_cookie("real_name", user.id_card)
     return resp
 
 
@@ -143,12 +132,6 @@ def user_auth():
         return jsonify(errno=RET.DBERR, errmsg="保存失败，请稍后重试")
     resp = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK]))
     resp.headers["Content-Type"] = "application/json"
-    if real_name is not None:
-        resp.set_cookie("real_name", real_name)
-    if id_card is not None:
-        resp.set_cookie("id_card", id_card)
-    if name is not None:
-        resp.set_cookie("name", name)
     return resp
 
 
@@ -178,5 +161,4 @@ def upload_avatar():
 
     resp = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK]))
     resp.headers["Content-Type"] = "application/json"
-    resp.set_cookie("avatar_url", constants.QINIU_URL_PREFIX + result)
     return resp

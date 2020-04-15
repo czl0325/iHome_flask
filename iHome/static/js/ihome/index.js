@@ -2,14 +2,15 @@ function getCookie(name) {
     var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
     return r ? r[1] : undefined;
 }
+
 //模态框居中的控制
-function centerModals(){
-    $('.modal').each(function(i){   //遍历每一个模态框
-        var $clone = $(this).clone().css('display', 'block').appendTo('body');    
+function centerModals() {
+    $('.modal').each(function (i) {   //遍历每一个模态框
+        var $clone = $(this).clone().css('display', 'block').appendTo('body');
         var top = Math.round(($clone.height() - $clone.find('.modal-content').height()) / 2);
         top = top > 0 ? top : 0;
         $clone.remove();
-        $(this).find('.modal-content').css("margin-top", top-30);  //修正原先已经有的30个像素
+        $(this).find('.modal-content').css("margin-top", top - 30);  //修正原先已经有的30个像素
     });
 }
 
@@ -28,7 +29,7 @@ function setStartDate() {
             startDate: startDate,
             format: "yyyy-mm-dd"
         });
-        $("#end-date").on("changeDate", function() {
+        $("#end-date").on("changeDate", function () {
             $("#end-date-input").val(
                 $(this).datepicker("getFormattedDate")
             );
@@ -52,7 +53,7 @@ function goToSearchPage(th) {
     url += ("aid=" + $(th).attr("area-id"));
     url += "&";
     var areaName = $(th).attr("area-name");
-    if (undefined == areaName) areaName="";
+    if (undefined == areaName) areaName = "";
     url += ("aname=" + areaName);
     url += "&";
     url += ("sd=" + $(th).attr("start-date"));
@@ -61,24 +62,30 @@ function goToSearchPage(th) {
     location.href = url;
 }
 
-$(document).ready(function(){
+$(document).ready(function () {
     var user_id = getCookie("user_id")
     if (user_id) {
         $(".top-bar>.user-info").show();
-        $(".top-bar>.user-info>.user-name").html(getCookie("name"))
-        $(".top-bar>.register-login").hide();
+        $(".top-bar>.register-login").hide()
+        $.get("/api/v1.0/user/" + user_id, function (res) {
+            if (res.errno == 0) {
+                $(".top-bar>.user-info>.user-name").html(res.data.mobile)
+            } else {
+                alert(res.errmsg)
+            }
+        })
     } else {
         $(".top-bar>.user-info").hide();
         $(".top-bar>.register-login").show();
     }
-    var mySwiper = new Swiper ('.swiper-container', {
+    var mySwiper = new Swiper('.swiper-container', {
         loop: true,
         autoplay: 2000,
         autoplayDisableOnInteraction: false,
         pagination: '.swiper-pagination',
         paginationClickable: true
-    }); 
-    $(".area-list a").click(function(e){
+    });
+    $(".area-list a").click(function (e) {
         $("#area-btn").html($(this).html());
         $(".search-btn").attr("area-id", $(this).attr("area-id"));
         $(".search-btn").attr("area-name", $(this).html());
@@ -92,7 +99,7 @@ $(document).ready(function(){
         startDate: "today",
         format: "yyyy-mm-dd"
     });
-    $("#start-date").on("changeDate", function() {
+    $("#start-date").on("changeDate", function () {
         var date = $(this).datepicker("getFormattedDate");
         $("#start-date-input").val(date);
     });
