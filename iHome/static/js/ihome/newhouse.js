@@ -33,16 +33,19 @@ $(document).ready(function () {
             }
         })
         // 收集设置id信息
-        var facility = [];
+        var facilitity_str = "";
         $(":checked[name=facility]").each(function (index, x) {
-            facility[index] = $(x).val()
+            facilitity_str += `${$(x).val()},`
         })
-        data.facility = facility
+        if (facilitity_str.length > 0) {
+            facilitity_str = facilitity_str.substring(0, facilitity_str.length-1)
+        }
+        data.facility = facilitity_str
         data.csrf_token = getCookie("csrf_token")
         $.post("/api/v1.0/house/create", {
-            data
+            ...data
         }, function (res) {
-            if (resp.errno == "4101") {
+            if (res.errno == "4101") {
                 location.href = "/login.html";
             } else if (res.errno == 0) {
                 // 隐藏基本信息表单

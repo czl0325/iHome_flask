@@ -1,14 +1,9 @@
 from . import api
-from flask import request, jsonify, session, current_app, make_response
-from iHome.models import Area, Facility
+from flask import request, jsonify, session, current_app, make_response, g
+from iHome.models import Area, Facility, House
 from iHome.utils.response_code import RET, error_map
 from iHome.utils.commons import LoginRequired
 from iHome import db
-
-
-@api.route("/house/info", methods=["GET"])
-def get_house_info():
-    return jsonify(errno=RET.OK, error_map="成功")
 
 
 @api.route("/house/create", methods=["POST"])
@@ -67,7 +62,11 @@ def create_house():
     )
 
     # 处理房屋的设施信息
-    facility_ids = house_data.get("facility")
+    try:
+        facility_str = request.form.get("facility")
+        facility_ids = facility_str.split(",")
+    except Exception as e:
+        current_app.logger.error(e)
 
     if facility_ids:
         try:
