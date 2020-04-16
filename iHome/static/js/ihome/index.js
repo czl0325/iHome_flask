@@ -78,13 +78,21 @@ $(document).ready(function () {
         $(".top-bar>.user-info").hide();
         $(".top-bar>.register-login").show();
     }
-    var mySwiper = new Swiper('.swiper-container', {
-        loop: true,
-        autoplay: 2000,
-        autoplayDisableOnInteraction: false,
-        pagination: '.swiper-pagination',
-        paginationClickable: true
-    });
+    $.get("/api/v1.0/house/all", function (res) {
+        if (res.errno == 0) {
+            let html = template("swiper-template", {houses: res.data})
+            $(".swiper-wrapper").html(html)
+            let mySwiper = new Swiper('.swiper-container', {
+                loop: true,
+                autoplay: 2000,
+                autoplayDisableOnInteraction: false,
+                pagination: '.swiper-pagination',
+                paginationClickable: true
+            });
+        } else {
+            alert(res.errmsg)
+        }
+    })
     $(".area-list a").click(function (e) {
         $("#area-btn").html($(this).html());
         $(".search-btn").attr("area-id", $(this).attr("area-id"));

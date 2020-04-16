@@ -122,12 +122,28 @@ def upload_house_image():
 
     try:
         house = House.query.get(house_id)
-        if house.index_image_url is None:
-            house.index_image_url = constants.QINIU_URL_PREFIX+result
-            db.session.add(house)
-            db.session.commit()
+        print(type(house))
+        if house.index_image_url is None or house.index_image_url.strip() == '':
+            try:
+                house.index_image_url = constants.QINIU_URL_PREFIX+result
+                db.session.add(house)
+                db.session.commit()
+            except Exception as e:
+                current_app.logger.error(e)
+                db.session.rollback()
     except Exception as e:
-        db.session.rollback()
         current_app.logger.error(e)
 
     return jsonify(errno=RET.OK, errmsg="上传成功", data=constants.QINIU_URL_PREFIX+result)
+
+
+@api.route("/house/all", methods=["GET"])
+def get_home_houses():
+    try:
+        houses = House.query.all().order_by(House.create_time.desc()).limit(5)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+
+    house_list = [house.to_base_dict() for house in houses]
+    return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=house_list)

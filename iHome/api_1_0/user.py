@@ -1,7 +1,7 @@
 from . import api
 from flask import request, jsonify, session, current_app, make_response, g
 from iHome.utils.response_code import RET, error_map
-from iHome.models import User
+from iHome.models import User, House
 from iHome import db, redis_store
 from sqlalchemy.exc import IntegrityError
 import re
@@ -162,3 +162,20 @@ def upload_avatar():
     resp = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK]))
     resp.headers["Content-Type"] = "application/json"
     return resp
+
+
+@api.route("/user/houses", methods=["GET"])
+@LoginRequired
+def get_user_houses():
+    user_id = request.args.get("uid")
+    if user_id is None:
+        return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=[])
+
+    try:
+        houses = House.query.filter(House.user_id == user_id).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+
+    houses_list = [house.to_base_dict() for house in houses]
+    return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=houses_list)

@@ -107,6 +107,19 @@ class House(BaseModel, db.Model):
     images = db.relationship("HouseImage")  # 房屋的图片
     orders = db.relationship("Order", backref="house")  # 房屋的订单
 
+    def to_base_dict(self):
+        return {
+            "house_id": self.id,
+            "area_name": self.area.name,
+            "title": self.title,
+            "price": self.price,
+            "beds": self.beds,
+            "index_image_url": self.index_image_url,
+            "create_time": self.create_time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+
+
 
 class Facility(BaseModel, db.Model):
     """设施信息"""

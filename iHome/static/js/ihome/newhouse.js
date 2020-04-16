@@ -14,7 +14,7 @@ $(document).ready(function () {
     })
     $.get("/api/v1.0/facility", function (res) {
         if (res.errno == 0) {
-            var html = template("facility-template", {facilities: res.data})
+            let html = template("facility-template", {facilities: res.data})
             $("#facility-ul").html(html)
         } else {
             alert(res.errmsg)
