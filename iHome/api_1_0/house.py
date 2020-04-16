@@ -140,10 +140,32 @@ def upload_house_image():
 @api.route("/house/all", methods=["GET"])
 def get_home_houses():
     try:
-        houses = House.query.all().order_by(House.create_time.desc()).limit(5)
+        houses = db.session.query(House).order_by(House.create_time.desc()).limit(5).all()
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
 
     house_list = [house.to_base_dict() for house in houses]
     return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=house_list)
+
+
+@api.route("/house/detail", methods=["GET"])
+def get_house_detail():
+    house_id = request.args.get("id")
+    if not all(house_id):
+        return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
+
+    try:
+        house = House.query.get(house_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+
+    try:
+        house_dict = house.to_full_dict()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="数据出错")
+
+    return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=house_dict)
+

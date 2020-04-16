@@ -3,6 +3,7 @@
 from datetime import datetime
 from . import db
 from werkzeug.security import generate_password_hash
+from iHome import constants
 
 
 class BaseModel(object):
@@ -114,11 +115,47 @@ class House(BaseModel, db.Model):
             "title": self.title,
             "price": self.price,
             "beds": self.beds,
-            "index_image_url": self.index_image_url,
+            "index_image_url": self.index_image_url if self.index_image_url.startswith(
+                "http") else constants.QINIU_URL_PREFIX + self.index_image_url,
             "create_time": self.create_time.strftime("%Y-%m-%d %H:%M:%S")
         }
 
+    def to_full_dict(self):
+        house_dict = {
+            "house_id": self.id,
+            "area_name": self.area.name,
+            "user_avatar": self.user.avatar_url,
+            "user_name": self.user.name,
+            "title": self.title,
+            "price": self.price,
+            "address": self.address,
+            "room_count": self.room_count,
+            "acreage": self.acreage,
+            "unit": self.unit,
+            "capacity": self.capacity,
+            "beds": self.beds,
+            "deposit": self.deposit,
+            "min_days": self.min_days,
+            "max_days": self.max_days,
+            "order_count": self.order_count,
+            "index_image_url": self.index_image_url if self.index_image_url.startswith(
+                "http") else constants.QINIU_URL_PREFIX + self.index_image_url,
+            "create_time": self.create_time.strftime("%Y-%m-%d %H:%M:%S")
+        }
 
+        # 房屋图片
+        img_urls = []
+        for image in self.images:
+            img_urls.append(image.url if image.url.startswith("http") else constants.QINIU_URL_PREFIX+image.url)
+        house_dict["img_urls"] = img_urls
+
+        # 房屋设施
+        facilities = []
+        for facility in self.facilities:
+            facilities.append(facility.id)
+        house_dict["facilities"] = facilities
+
+        return house_dict
 
 
 class Facility(BaseModel, db.Model):
