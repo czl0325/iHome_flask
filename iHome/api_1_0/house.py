@@ -1,11 +1,13 @@
 from . import api
 from flask import request, jsonify, session, current_app, make_response, g
-from iHome.models import Area, Facility, House, HouseImage
+from iHome.models import Area, Facility, House, HouseImage, Order
 from iHome.utils.response_code import RET, error_map
 from iHome.utils.commons import LoginRequired
 from iHome import db
 from iHome.utils.image_upload import upload_image
 from iHome import constants
+from datetime import datetime
+import json
 
 
 @api.route("/house/create", methods=["POST"])
@@ -139,6 +141,8 @@ def upload_house_image():
 
 @api.route("/house/all", methods=["GET"])
 def get_home_houses():
+    # todo 使用redis缓存
+
     try:
         houses = db.session.query(House).order_by(House.create_time.desc()).limit(5).all()
     except Exception as e:
@@ -149,11 +153,109 @@ def get_home_houses():
     return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=house_list)
 
 
+@api.route("/house/search", methods=["GET"])
+def search_houses():
+    """房屋搜索接口"""
+    area_id = request.args.get("aid")
+    start_date = request.args.get("sd")
+    end_date = request.args.get("ed")
+    sort_key = request.args.get("sortKey", "new")
+    page_num = request.args.get("p", 1)
+
+    # 处理时间
+    try:
+        if start_date:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+
+        if end_date:
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+
+        if start_date and end_date:
+            assert start_date <= end_date
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg="时间格式错误")
+
+    if area_id:
+        try:
+            area = Area.query.get(area_id)
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.PARAMERR, errmsg="区域参数有误")
+
+    try:
+        page_num = int(page_num)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg="页码参数有误")
+
+    # todo 使用redis缓存
+
+    # 过滤条件的参数列表容器
+    filter_params = []
+
+    # 填充过滤参数
+
+    # 找出预订时间有冲突的房子
+    conflict_orders = None
+    try:
+        if start_date and end_date:
+            # 查询冲突的订单
+            conflict_orders = Order.query.filter(Order.begin_date<=end_date, Order.end_date>=start_date).all()
+        elif start_date:
+            conflict_orders = Order.query.filter(Order.end_date>=start_date).all()
+        elif end_date:
+            conflict_orders = Order.query.filter(Order.begin_date <= end_date).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+
+    if conflict_orders:
+        # 从订单中获取冲突的房屋id
+        conflict_house_ids = [order.house_id for order in conflict_orders]
+        # 如果冲突的房屋id不为空，向查询参数中添加条件
+        if conflict_house_ids:
+            filter_params.append(House.id.notin_(conflict_house_ids))
+
+    if area_id:
+        filter_params.append(House.area_id==area_id)
+
+    if sort_key == "booking":  # 入住做多
+        house_query = House.query.filter(*filter_params).order_by(House.order_count.desc())
+    elif sort_key == "price-inc":
+        house_query = House.query.filter(*filter_params).order_by(House.price.asc())
+    elif sort_key == "price-des":
+        house_query = House.query.filter(*filter_params).order_by(House.price.desc())
+    else:
+        house_query = House.query.filter(*filter_params).order_by(House.create_time.desc())
+
+    # 处理分页
+    try:
+        page_obj = house_query.paginate(page=page_num, per_page=constants.HOUSE_LIST_PAGE_CAPACITY, error_out=False)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+
+    # 获取页面数据
+    house_list = page_obj.items
+    houses = [house.to_base_dict() for house in house_list]
+    # 获取总页数
+    total_page = page_obj.pages
+
+    # return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=json.dumps({total_page: total_page, houses: houses}))
+    response_dict = dict(errno=RET.OK, errmsg="OK", data={"total_page": total_page, "houses": houses, "current_page": page_num})
+    return response_dict
+
+
 @api.route("/house/detail", methods=["GET"])
 def get_house_detail():
     house_id = request.args.get("id")
+    user_id = session.get("user_id", -1)
+
     if not all(house_id):
         return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
+
+    # todo 使用redis缓存
 
     try:
         house = House.query.get(house_id)
@@ -166,6 +268,8 @@ def get_house_detail():
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg="数据出错")
+
+    house_dict["isMe"] = user_id == house.user_id
 
     return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=house_dict)
 

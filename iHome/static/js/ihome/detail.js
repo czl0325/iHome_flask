@@ -12,14 +12,20 @@ function decodeQuery() {
 }
 
 function updateHouseInfo(house) {
+    $(".swiper-container").html(template("detail-template1", {"house": house}))
     $(".detail-con").html(template("detail-template2", {"house": house}))
     var mySwiper = new Swiper('.swiper-container', {
         loop: true,
-        autoplay: 2000,
+        autoplay: 5000,
         autoplayDisableOnInteraction: false,
         pagination: '.swiper-pagination',
         paginationType: 'fraction'
     })
+    if (house.isMe) {
+        $(".book-house").hide()
+    } else {
+        $(".book-house").show()
+    }
 }
 
 $(document).ready(function () {

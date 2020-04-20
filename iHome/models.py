@@ -28,6 +28,12 @@ class User(BaseModel, db.Model):
     houses = db.relationship("House", backref="user")  # 用户发布的房屋
     orders = db.relationship("Order", backref="user")  # 用户下的订单
 
+    # def __getattribute__(self, item):
+    #     if item == "avatar_url":
+    #         return self.avatar_url if self.avatar_url.startswith("http") else constants.QINIU_URL_PREFIX+self.avatar_url
+    #     else:
+    #         return super().__getattribute__(item)
+
     # 加上property装饰器后，会把函数变为属性，属性名即为函数名
     @property
     def password(self):
@@ -52,7 +58,7 @@ class User(BaseModel, db.Model):
             "id": self.id,
             "name": self.name,
             "mobile": self.mobile,
-            "avatar_url": self.avatar_url,
+            "avatar_url": self.avatar_url if self.avatar_url.startswith("http") else constants.QINIU_URL_PREFIX+self.avatar_url,
             "id_card": self.id_card,
             "real_name": self.real_name
         }

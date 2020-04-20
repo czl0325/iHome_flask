@@ -93,12 +93,16 @@ $(document).ready(function () {
             alert(res.errmsg)
         }
     })
-    $(".area-list a").click(function (e) {
-        $("#area-btn").html($(this).html());
-        $(".search-btn").attr("area-id", $(this).attr("area-id"));
-        $(".search-btn").attr("area-name", $(this).html());
-        $("#area-modal").modal("hide");
-    });
+    $.get("/api/v1.0/area", function (res) {
+        $(".area-list").html(template("area-template", {areas: res.data}))
+
+        $(".area-list a").click(function (e) {
+            $("#area-btn").html($(this).html());
+            $(".search-btn").attr("area-id", $(this).attr("area-id"));
+            $(".search-btn").attr("area-name", $(this).html());
+            $("#area-modal").modal("hide");
+        });
+    })
     $('.modal').on('show.bs.modal', centerModals);      //当模态框出现的时候
     $(window).on('resize', centerModals);               //当窗口大小变化的时候
     $("#start-date").datepicker({
