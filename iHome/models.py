@@ -58,10 +58,17 @@ class User(BaseModel, db.Model):
             "id": self.id,
             "name": self.name,
             "mobile": self.mobile,
-            "avatar_url": self.avatar_url if self.avatar_url.startswith("http") else constants.QINIU_URL_PREFIX+self.avatar_url,
             "id_card": self.id_card,
             "real_name": self.real_name
         }
+        if isinstance(self.avatar_url, str):
+            if self.avatar_url.startswith("http"):
+                user_dict["avatar_url"] = self.avatar_url
+            else:
+                user_dict["avatar_url"] = constants.QINIU_URL_PREFIX+self.avatar_url
+        else:
+            return ""
+
         return user_dict
 
 
