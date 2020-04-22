@@ -4,9 +4,9 @@ function getCookie(name) {
 }
 
 function logout() {
-    $.get("/api/logout", function (data) {
+    $.get("/api/v1.0/user/logout", function (data) {
         if (0 == data.errno) {
-            location.href = "/";
+            window.location = "/";
         }
     })
 }

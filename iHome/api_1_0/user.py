@@ -88,6 +88,18 @@ def login():
     return resp
 
 
+@api.route("/user/logout", methods=["GET"])
+def user_logout():
+    csrf_token = session.get("csrf_token")
+    session.clear()
+    if csrf_token is not None:
+        session["csrf_token"] = csrf_token
+    response = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK]))
+    response.delete_cookie("mobile")
+    response.delete_cookie("user_id")
+    return response
+
+
 @api.route("/user/<int:uid>", methods=["GET"])
 def getUserById(uid):
     """根据id获取user信息"""

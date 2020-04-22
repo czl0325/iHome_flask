@@ -25,6 +25,7 @@ function updateHouseInfo(house) {
         $(".book-house").hide()
     } else {
         $(".book-house").show()
+        $(".book-house").attr("href", "/booking.html?house_id="+house.house_id)
     }
 }
 
