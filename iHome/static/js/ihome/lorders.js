@@ -25,4 +25,9 @@ $(document).ready(function(){
         var orderId = $(this).parents("li").attr("order-id");
         $(".modal-reject").attr("order-id", orderId);
     });
+    $.get("/api/v1.0/user/orders", {
+        role: "custom"
+    }, function (res) {
+
+    })
 });

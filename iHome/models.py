@@ -221,3 +221,17 @@ class Order(BaseModel, db.Model):
         ),
         default="WAIT_ACCEPT", index=True)
     comment = db.Column(db.Text)  # 订单的评论信息或者拒单原因
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "house_id": self.house_id,
+            "begin_date": self.begin_date,
+            "end_date": self.end_date,
+            "days": self.days,
+            "house_price": self.house_price,
+            "amount": self.amount,
+            "status": self.status,
+            "comment": self.comment
+        }
