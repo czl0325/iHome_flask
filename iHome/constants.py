@@ -11,4 +11,4 @@ SEND_SMS_CODE_INTERVAL = 60
 QINIU_URL_PREFIX = "http://q8rnv2yqz.bkt.clouddn.com/"
 
 # 房屋列表页面每页数据容量
-HOUSE_LIST_PAGE_CAPACITY = 2
+HOUSE_LIST_PAGE_CAPACITY = 5

@@ -273,3 +273,7 @@ def get_house_detail():
 
     return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=house_dict)
 
+
+
+
+

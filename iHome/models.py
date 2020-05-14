@@ -58,10 +58,17 @@ class User(BaseModel, db.Model):
             "id": self.id,
             "name": self.name,
             "mobile": self.mobile,
-            "avatar_url": self.avatar_url if self.avatar_url.startswith("http") else constants.QINIU_URL_PREFIX+self.avatar_url,
             "id_card": self.id_card,
             "real_name": self.real_name
         }
+        if isinstance(self.avatar_url, str):
+            if self.avatar_url.startswith("http"):
+                user_dict["avatar_url"] = self.avatar_url
+            else:
+                user_dict["avatar_url"] = constants.QINIU_URL_PREFIX+self.avatar_url
+        else:
+            return ""
+
         return user_dict
 
 
@@ -214,3 +221,17 @@ class Order(BaseModel, db.Model):
         ),
         default="WAIT_ACCEPT", index=True)
     comment = db.Column(db.Text)  # 订单的评论信息或者拒单原因
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "house_id": self.house_id,
+            "begin_date": self.begin_date,
+            "end_date": self.end_date,
+            "days": self.days,
+            "house_price": self.house_price,
+            "amount": self.amount,
+            "status": self.status,
+            "comment": self.comment
+        }

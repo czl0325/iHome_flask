@@ -1,7 +1,7 @@
 from . import api
 from flask import request, jsonify, session, current_app, make_response, g
 from iHome.utils.response_code import RET, error_map
-from iHome.models import User, House
+from iHome.models import User, House, Order
 from iHome import db, redis_store
 from sqlalchemy.exc import IntegrityError
 import re
@@ -86,6 +86,18 @@ def login():
     resp.set_cookie("mobile", user.mobile)
     resp.set_cookie("user_id", str(user.id))
     return resp
+
+
+@api.route("/user/logout", methods=["GET"])
+def user_logout():
+    csrf_token = session.get("csrf_token")
+    session.clear()
+    if csrf_token is not None:
+        session["csrf_token"] = csrf_token
+    response = make_response(jsonify(errno=RET.OK, errmsg=error_map[RET.OK]))
+    response.delete_cookie("mobile")
+    response.delete_cookie("user_id")
+    return response
 
 
 @api.route("/user/<int:uid>", methods=["GET"])
@@ -179,3 +191,31 @@ def get_user_houses():
 
     houses_list = [house.to_base_dict() for house in houses]
     return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=houses_list)
+
+
+@api.route("/user/order", methods=["GET"])
+@LoginRequired
+def get_user_order():
+    user_id = g.user_id
+    role = request.args.get("role", "")
+
+    try:
+        # 先查询属于自己的房子有哪些
+        if role == "landlord":
+            houses = House.query.filter(House.user_id==user_id).all()
+            houses_ids = [house.id for house in houses]
+            # 再查询预订了自己房子的订单
+            orders = Order.query.filter(Order.house_id.in_(houses_ids)).order_by(Order.create_time.desc()).all()
+        else:
+            orders = Order.query.filter(Order.user_id==user_id).order_by(Order.create_time.desc()).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+
+    # 将订单对象转换为字典数据
+    orders_dict_list = []
+    if orders:
+        for order in orders:
+            orders_dict_list.append(order.to_dict())
+
+    return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=orders_dict_list)

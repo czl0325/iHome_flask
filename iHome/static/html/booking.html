@@ -21,12 +21,14 @@
             </div>
         </div>
         <div class="house-info">
-            <img src="/static/images/home01.jpg">
-            <div class="house-text">
-                <h3>房屋标题</h3>
-                <p>￥<span>300</span>/晚</p>
-            </div>
         </div>
+        <script type="text/html" id="house-template">
+            <img src="{{house.index_image_url}}">
+            <div class="house-text">
+                <h3>{{house.title}}</h3>
+                <p>￥<span>{{house.price/100.0}}</span>/晚</p>
+            </div>
+        </script>
         <div class="select-date">
             <div class="select-date-header">入住时间</div>
             <div class="input-daterange input-group">
@@ -52,5 +54,6 @@
     <script src="/static/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
     <script src="/static/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
     <script src="/static/js/ihome/booking.js"></script>
+    <script src="/static/js/template.js"></script>
 </body>
 </html>

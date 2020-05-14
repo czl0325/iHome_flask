@@ -124,4 +124,27 @@ $(document).ready(function () {
     })
     getArea()
     updateHouseData(true)
+
+    //监听滚动到底部加载更多
+    // 获取页面显示窗口的高度
+    let windowHeight = $(window).height();
+    window.onscroll = function () {
+        let b = document.documentElement.scrollTop == 0 ? document.body.scrollTop : document.documentElement.scrollTop
+        let c = document.documentElement.scrollTop == 0 ? document.body.scrollHeight : document.documentElement.scrollHeight
+        // 如果滚动到接近窗口底部
+        if (c - b < windowHeight + 50) {
+            // 如果没有正在向后端发送查询房屋列表信息的请求
+            if (!house_data_querying) {
+                // 将正在向后端查询房屋列表信息的标志设置为真，
+                house_data_querying = true;
+                // 如果当前页面数还没到达总页数
+                if (cur_page < total_page) {
+                    // 向后端发送请求，查询下一页房屋数据
+                    updateHouseData(false);
+                } else {
+                    house_data_querying = false;
+                }
+            }
+        }
+    }
 })
