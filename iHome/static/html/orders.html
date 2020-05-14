@@ -31,9 +31,11 @@
                     <h3>订单编号：{{order.order_id}}</h3>
                     {{ if "WAIT_COMMENT" == order.status }}
                     <div class="fr order-operate">
-                        <button type="button" class="btn btn-success order-comment" data-toggle="modal"
-                                data-target="#comment-modal">发表评价
-                        </button>
+                        <button type="button" class="btn btn-success order-comment" data-toggle="modal" data-target="#comment-modal">发表评价</button>
+                    </div>
+                    {{ else if "WAIT_PAYMENT" == order.status }}
+                    <div class="fr order-operate">
+                        <button type="button" class="btn btn-success order-pay">去支付</button>
                     </div>
                     {{/if}}
                 </div>
@@ -104,6 +106,7 @@
 <script src="/static/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
 <script src="/static/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
 <script src="/static/js/template.js"></script>
+<script src="/static/js/jquery.cookie.js"></script>
 <script src="/static/js/ihome/orders.js"></script>
 </body>
 </html>

@@ -28,3 +28,8 @@ $ python manage.py db --help
 
 
 - !["'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous."错误](https://www.cnblogs.com/lilip/p/10109557.html)
+
+
+- 支付宝沙箱账号
+ - quiqxl3314@sandbox.com
+ - 111111

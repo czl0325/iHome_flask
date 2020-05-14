@@ -12,3 +12,6 @@ QINIU_URL_PREFIX = "http://q8rnv2yqz.bkt.clouddn.com/"
 
 # 房屋列表页面每页数据容量
 HOUSE_LIST_PAGE_CAPACITY = 5
+
+# 支付宝的网关地址（支付地址域名）
+ALIPAY_URL_PREFIX = "https://openapi.alipaydev.com/gateway.do?"

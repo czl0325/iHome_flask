@@ -5,6 +5,9 @@ from iHome.utils.commons import LoginRequired
 from iHome.utils.response_code import RET, error_map
 from iHome.models import House, Order, User
 from datetime import datetime
+from alipay import AliPay
+from iHome.constants import ALIPAY_URL_PREFIX
+import os
 
 
 @api.route("/order/save", methods=["POST"])
@@ -82,11 +85,11 @@ def set_order_status(order_id):
 
     action = request.form.get("action")
 
-    if action not in ["accept", "reject"]:
+    if action not in ["accept", "reject", "payment"]:
         return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
 
     try:
-        order = Order.query.filter(Order.id == order_id, Order.status == "WAIT_ACCEPT").first()
+        order = Order.query.filter(Order.id == order_id).first()
         house = order.house
     except Exception as e:
         current_app.logger.error(e)
@@ -94,20 +97,25 @@ def set_order_status(order_id):
 
     if not order:
         return jsonify(errno=RET.DATAERR, errmsg="订单信息有误")
-    # 确保房东只能修改属于自己房子的订单
-    if user_id != house.user_id:
-        return jsonify(errno=RET.REQERR, errmsg="只有房东才能进行此操作")
 
     if action == "accept":
+        # 确保房东只能修改属于自己房子的订单
+        if user_id != house.user_id:
+            return jsonify(errno=RET.REQERR, errmsg="只有房东才能进行此操作")
         # 接单，将订单状态设置为等待评论
         order.status = "WAIT_PAYMENT"
     elif action == "reject":
+        # 确保房东只能修改属于自己房子的订单
+        if user_id != house.user_id:
+            return jsonify(errno=RET.REQERR, errmsg="只有房东才能进行此操作")
         # 拒单，要求用户传递拒单原因
         reason = request.form.get("reason")
         if not reason:
             return jsonify(errno=RET.PARAMERR, errmsg="拒单原因必填")
         order.status = "REJECTED"
         order.comment = reason
+    elif action == "payment":
+        order.status = "PAID"
 
     try:
         db.session.add(order)
@@ -118,3 +126,46 @@ def set_order_status(order_id):
         return jsonify(errno=RET.DBERR, errmsg="操作失败")
 
     return jsonify(errno=RET.OK, errmsg=error_map[RET.OK])
+
+
+@api.route("/order/<int:order_id>/payment", methods=["POST"])
+@LoginRequired
+def order_pay(order_id):
+    user_id = g.user_id
+
+    try:
+        order = Order.query.filter(Order.id == order_id, Order.user_id == user_id, Order.status == "WAIT_PAYMENT").first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
+
+    if not order:
+        return jsonify(errno=RET.PARAMERR, errmsg="订单信息错误")
+
+    app_private_key_path = os.path.join(os.path.dirname(__file__), "keys/app_private_key.pem")
+    with open(app_private_key_path) as fp:
+        app_private_key = fp.read()
+
+    alipay_public_key_path = os.path.join(os.path.dirname(__file__), "keys/alipay_public_key.pem")
+    with open(app_private_key_path) as fp:
+        app_public_key = fp.read()
+    alipay_client = AliPay(
+        appid="2016101800719355",
+        app_notify_url=None,
+        app_private_key_string=app_private_key,
+        alipay_public_key_string=app_public_key,
+        sign_type="RSA2",
+        debug=True
+    )
+    # 手机网站支付，需要跳转到https://openapi.alipaydev.com/gateway.do? + order_string
+    order_string = alipay_client.api_alipay_trade_wap_pay(
+        out_trade_no=order.id,  # 订单编号
+        total_amount=str(order.amount / 100.0),  # 总金额
+        subject=u"爱家租房 %s" % order.id,  # 订单标题
+        return_url="http://127.0.0.1:5000/paycomplete.html",  # 返回的连接地址
+        notify_url=None  # 可选, 不填则使用默认notify url
+    )
+
+    # 构建让用户跳转的支付连接地址
+    pay_url = ALIPAY_URL_PREFIX + order_string
+    return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data={"pay_url": pay_url})
