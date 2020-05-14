@@ -2,9 +2,9 @@ let cur_page = 1;       // 当前页
 let total_page = 1;     // 总页数
 let house_data_querying = true;   // 是否正在向后台获取数据
 
-function decodeQuery(){
+function decodeQuery() {
     let search = decodeURI(document.location.search);
-    return search.replace(/(^\?)/, '').split('&').reduce(function(result, item){
+    return search.replace(/(^\?)/, '').split('&').reduce(function (result, item) {
         let values = item.split('=');
         result[values[0]] = values[1];
         return result;
@@ -22,6 +22,7 @@ function updateFilterDateDisplay() {
         $filterDateTitle.html("入住日期");
     }
 }
+
 //搜索房屋列表
 function updateHouseData(refresh) {
     let areaId = $(".filter-area>li.active").attr("area-id");
@@ -59,15 +60,23 @@ function updateHouseData(refresh) {
     })
 }
 
-$(document).ready(function(){
+function getArea() {
+    $.get("/api/v1.0/area", null, function (res) {
+        $(".filter-area").html(template("area-template", {areas: res.data}))
+    })
+}
+
+$(document).ready(function () {
     let queryData = decodeQuery();
     let startDate = queryData["sd"];
     let endDate = queryData["ed"];
-    $("#start-date").val(startDate); 
-    $("#end-date").val(endDate); 
+    $("#start-date").val(startDate);
+    $("#end-date").val(endDate);
     updateFilterDateDisplay();
     let areaName = queryData["aname"];
-    if (!areaName) areaName = "位置区域";
+    if (!areaName) {
+        areaName = "位置区域";
+    }
     $(".filter-title-bar>.filter-title").eq(1).children("span").eq(0).html(areaName);
     $(".input-daterange").datepicker({
         format: "yyyy-mm-dd",
@@ -76,7 +85,7 @@ $(document).ready(function(){
         autoclose: true
     });
     let $filterItem = $(".filter-item-bar>.filter-item");
-    $(".filter-title-bar").on("click", ".filter-title", function(e){
+    $(".filter-title-bar").on("click", ".filter-title", function (e) {
         let index = $(this).index();
         if (!$filterItem.eq(index).hasClass("active")) {
             $(this).children("span").children("i").removeClass("fa-angle-down").addClass("fa-angle-up");
@@ -90,13 +99,13 @@ $(document).ready(function(){
             updateFilterDateDisplay();
         }
     });
-    $(".display-mask").on("click", function(e) {
+    $(".display-mask").on("click", function (e) {
         $(this).hide();
         $filterItem.removeClass('active');
         updateFilterDateDisplay();
 
     });
-    $(".filter-item-bar>.filter-area").on("click", "li", function(e) {
+    $(".filter-item-bar>.filter-area").on("click", "li", function (e) {
         if (!$(this).hasClass("active")) {
             $(this).addClass("active");
             $(this).siblings("li").removeClass("active");
@@ -106,12 +115,13 @@ $(document).ready(function(){
             $(".filter-title-bar>.filter-title").eq(1).children("span").eq(0).html("位置区域");
         }
     });
-    $(".filter-item-bar>.filter-sort").on("click", "li", function(e) {
+    $(".filter-item-bar>.filter-sort").on("click", "li", function (e) {
         if (!$(this).hasClass("active")) {
             $(this).addClass("active");
             $(this).siblings("li").removeClass("active");
             $(".filter-title-bar>.filter-title").eq(2).children("span").eq(0).html($(this).html());
         }
     })
+    getArea()
     updateHouseData(true)
 })

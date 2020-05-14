@@ -111,6 +111,7 @@ body {
 }
 .house-item img{
     width: 100%;
+    min-height: 50px;
 }
 .landlord-pic {
     display: inline-block;
