@@ -21,4 +21,12 @@ $(document).ready(function(){
         var orderId = $(this).parents("li").attr("order-id");
         $(".modal-comment").attr("order-id", orderId);
     });
+    // 查询房客订单
+    $.get("/api/v1.0/user/orders", {
+        role: "custom"
+    },function (res) {
+        if (res.errno == 0) {
+            $(".orders-list").html(template("orders-list-tmpl", {orders:res.data}))
+        }
+    })
 });

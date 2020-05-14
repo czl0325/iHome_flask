@@ -193,21 +193,21 @@ def get_user_houses():
     return jsonify(errno=RET.OK, errmsg=error_map[RET.OK], data=houses_list)
 
 
-@api.route("/user/order", methods=["GET"])
+@api.route("/user/orders", methods=["GET"])
 @LoginRequired
-def get_user_order():
+def get_user_orders():
     user_id = g.user_id
     role = request.args.get("role", "")
 
     try:
         # 先查询属于自己的房子有哪些
         if role == "landlord":
-            houses = House.query.filter(House.user_id==user_id).all()
+            houses = House.query.filter(House.user_id == user_id).all()
             houses_ids = [house.id for house in houses]
             # 再查询预订了自己房子的订单
             orders = Order.query.filter(Order.house_id.in_(houses_ids)).order_by(Order.create_time.desc()).all()
         else:
-            orders = Order.query.filter(Order.user_id==user_id).order_by(Order.create_time.desc()).all()
+            orders = Order.query.filter(Order.user_id == user_id).order_by(Order.create_time.desc()).all()
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])

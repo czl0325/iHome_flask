@@ -224,14 +224,15 @@ class Order(BaseModel, db.Model):
 
     def to_dict(self):
         return {
-            "id": self.id,
+            "order_id": self.id,
             "user_id": self.user_id,
             "house_id": self.house_id,
-            "begin_date": self.begin_date,
-            "end_date": self.end_date,
+            "start_date": self.begin_date.strftime("%Y-%m-%d"),
+            "end_date": self.end_date.strftime("%Y-%m-%d"),
             "days": self.days,
             "house_price": self.house_price,
             "amount": self.amount,
             "status": self.status,
-            "comment": self.comment
+            "comment": self.comment,
+            "ctime": self.create_time.strftime("%Y-%m-%d")
         }
