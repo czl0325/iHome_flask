@@ -227,6 +227,7 @@ class Order(BaseModel, db.Model):
             "order_id": self.id,
             "user_id": self.user_id,
             "house_id": self.house_id,
+            "title": self.house.title,
             "start_date": self.begin_date.strftime("%Y-%m-%d"),
             "end_date": self.end_date.strftime("%Y-%m-%d"),
             "days": self.days,

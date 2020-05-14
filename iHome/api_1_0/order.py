@@ -41,7 +41,8 @@ def save_order():
         return jsonify(errno=RET.PARAMERR, errmsg="不能预订自己的房子")
 
     try:
-        count = Order.query.filter(Order.house_id == house_id, Order.begin_date <= end_date, Order.end_date >= start_date).count()
+        count = Order.query.filter(Order.house_id == house_id, Order.begin_date <= end_date,
+                                   Order.end_date >= start_date).count()
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg=error_map[RET.DBERR])
@@ -71,3 +72,49 @@ def save_order():
         return jsonify(errno=RET.DBERR, errmsg="保存订单失败")
 
     return jsonify(errno=RET.OK, errmsg="OK", data={"order_id": order.id})
+
+
+@api.route("/order/<int:order_id>/status", methods=["PUT"])
+@LoginRequired
+def set_order_status(order_id):
+    """接单、拒单"""
+    user_id = g.user_id
+
+    action = request.form.get("action")
+
+    if action not in ["accept", "reject"]:
+        return jsonify(errno=RET.PARAMERR, errmsg=error_map[RET.PARAMERR])
+
+    try:
+        order = Order.query.filter(Order.id == order_id, Order.status == "WAIT_ACCEPT").first()
+        house = order.house
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DATAERR, errmsg="查无此订单")
+
+    if not order:
+        return jsonify(errno=RET.DATAERR, errmsg="订单信息有误")
+    # 确保房东只能修改属于自己房子的订单
+    if user_id != house.user_id:
+        return jsonify(errno=RET.REQERR, errmsg="只有房东才能进行此操作")
+
+    if action == "accept":
+        # 接单，将订单状态设置为等待评论
+        order.status = "WAIT_PAYMENT"
+    elif action == "reject":
+        # 拒单，要求用户传递拒单原因
+        reason = request.form.get("reason")
+        if not reason:
+            return jsonify(errno=RET.PARAMERR, errmsg="拒单原因必填")
+        order.status = "REJECTED"
+        order.comment = reason
+
+    try:
+        db.session.add(order)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="操作失败")
+
+    return jsonify(errno=RET.OK, errmsg=error_map[RET.OK])
